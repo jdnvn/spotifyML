@@ -16,7 +16,16 @@ playlist_features_list = ["artist", "track_name",  "track_id", "danceability", "
 playlist_df = pd.DataFrame(columns=playlist_features_list)
 
 # Make a dataset of songs that come from
-classical_playlist = sp.playlist('37i9dQZF1DWWEJlAGA9gs0')
-print(classical_playlist['tracks'])
-# for k, v in classical_playlist:
-#   print(k, v)
+classical_playlist = sp.playlist('37i9dQZF1DWWEJlAGA9gs0')['tracks']['items']
+
+playlist_ids = []
+
+for track in classical_playlist:
+  playlist_ids.append(track['track']['id'])
+
+track_features = sp.audio_features(playlist_ids)
+print(track_features[0])
+
+
+
+
