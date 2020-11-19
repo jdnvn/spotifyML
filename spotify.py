@@ -41,6 +41,27 @@ def get_playlist_features(playlistID, genre):
   return np.array(tracks)
 
 
+def format_data(all_class_ids):
+  classes = ['classical', 'rap', 'edm']
+  x = []
+  y = []
+
+  for i, ids in enumerate(all_class_ids):
+    features = []
+    for playlist_id in ids:
+      if len(features) > 0:
+        features = np.concatenate((features, get_playlist_features(playlist_id, classes[i])))
+      else:
+        features = get_playlist_features(playlist_id, classes[i])
+
+    y.extend([classes[i]]*len(features))
+
+    if len(x) > 0:
+      x = np.concatenate((x, features))
+    else:
+      x = features
+
+  return x, y
 # Marcin EDM 2020 spotify:playlist:6DHt1ugZdDCkPe3PNf69PQ
 
 # Rap song: 3wsYSS0TEI5ERTuDNfiU7t
@@ -48,46 +69,28 @@ def get_playlist_features(playlistID, genre):
 # Deadmaus ghost n stuff: 3ezkJgagRPZ39KCTrKcSI7
 # Classical song: 67TCAXIe154ZGDNaWceqxC
 
-classical_test_ids = ['37i9dQZF1DWYkztttC1w38', '0DOYw5K9vybLVN1lOUO9b5', '4o6d2y91Us7AfsIzCj5uwr']
-test_classical = []
+classical_train_ids = ['37i9dQZF1DWYkztttC1w38', '0DOYw5K9vybLVN1lOUO9b5', '4o6d2y91Us7AfsIzCj5uwr']
+rap_train_ids = ['37i9dQZF1DX186v583rmzp', '4gdyJJFph3i2oMdpRnCONw', '5xNWwWNTIHp21TauVPWaPk']
+edm_train_ids = ['6DHt1ugZdDCkPe3PNf69PQ', '09T8BRorjn8It7gCCKuT3U', '5mhb5QRMXgufiqEuHL74gi']
 
-for track_id in classical_test_ids:
-  if len(test_classical) > 0:
-    test_classical = np.concatenate((test_classical, get_playlist_features(track_id, 'classical')))
-  else:
-    test_classical = get_playlist_features(track_id, 'classical')
+classical_test_ids = ['6wObnEPQ63a4kei1sEcMdH', '1ZJpJahEFst7u8njXeGFyv']
+rap_test_ids = ['2nJsRFJkr7BegSfKpG2d7O', '7pf7okzvbnPdobKmjHJSRl']
+edm_test_ids = ['37i9dQZF1DWZ5Se2LB1C5h', '5tkXZ9sMI2xAGsJXb3EuoK']
 
-print(len(test_classical))
-test_rap = get_playlist_features('37i9dQZF1DX186v583rmzp', 'rap')
-print(len(test_rap))
-test_edm = get_playlist_features('3Di88mvYplBtkDBIzGLiiM', 'edm')
-print(len(test_edm))
+all_train_ids = [classical_train_ids, rap_train_ids, edm_train_ids]
+all_test_ids = [classical_test_ids, rap_test_ids, edm_test_ids]
 
-x_test = np.concatenate((np.array(test_classical), np.array(test_rap)))
-x_test = np.concatenate((x_test, np.array(test_edm)))
-
-
-classical_features = get_playlist_features('37i9dQZF1DWWEJlAGA9gs0', 'classical')
-rap_features = get_playlist_features('5xNWwWNTIHp21TauVPWaPk', 'rap')
-edm_features = get_playlist_features('6DHt1ugZdDCkPe3PNf69PQ', 'edm')
-
-x_train = np.array(classical_features)
-x_train = np.concatenate((x_train, np.array(rap_features)))
-x_train = np.concatenate((x_train, np.array(edm_features)))
-
-y_train = np.array(['classical'] * 100)
-y_train = np.concatenate((y_train, np.array(['rap'] * 100)))
-y_train = np.concatenate((y_train, np.array(['edm'] * 100)))
+x_train, y_train = format_data(all_train_ids)
+x_test, y_test = format_data(all_train_ids)
 
 knn = KNeighborsClassifier()
 knn.fit(x_train, y_train)
 
 y_pred = knn.predict(x_test)
-print(len(y_pred))
 
 # precision = precision_score(y_train, y_pred)
 # recall = recall_score(y_train, y_pred)
-accuracy = accuracy_score(y_train, y_pred)
+accuracy = accuracy_score(y_test, y_pred)
 # roc_auc = roc_auc_score(y_train, nb.scores)
 
 # print("f1: " + str(f1))
