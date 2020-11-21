@@ -3,9 +3,10 @@ import pandas as pd
 import numpy as np
 
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score, accuracy_score
 
-# Hey bri guy
+# Spotify track genre classifier
 
 CLIENT_ID = "b665f59008ab415c927afbc0f00b44b1"
 CLIENT_SECRET = "84f8a61e253a4a0db91a1f50e8a0a9f1"
@@ -25,8 +26,10 @@ def get_playlist_features(playlistID, genre):
   playlist_ids = []
 
   for track in playlist:
-    track_id = track['track']['id']
-    if track_id: playlist_ids.append(track_id)
+    track_obj = track['track']
+    if track_obj:
+      track_id = track_obj['id']
+      if track_id: playlist_ids.append(track_id)
 
   track_features = sp.audio_features(playlist_ids)
 
@@ -55,13 +58,16 @@ def format_data(all_class_ids):
         features = get_playlist_features(playlist_id, classes[i])
 
     y.extend([classes[i]]*len(features))
-
+    print(classes[i])
+    print(len(features))
+    print()
     if len(x) > 0:
       x = np.concatenate((x, features))
     else:
       x = features
 
   return x, y
+
 # Marcin EDM 2020 spotify:playlist:6DHt1ugZdDCkPe3PNf69PQ
 
 # Rap song: 3wsYSS0TEI5ERTuDNfiU7t
@@ -69,9 +75,16 @@ def format_data(all_class_ids):
 # Deadmaus ghost n stuff: 3ezkJgagRPZ39KCTrKcSI7
 # Classical song: 67TCAXIe154ZGDNaWceqxC
 
-classical_train_ids = ['37i9dQZF1DWYkztttC1w38', '0DOYw5K9vybLVN1lOUO9b5', '4o6d2y91Us7AfsIzCj5uwr']
-rap_train_ids = ['37i9dQZF1DX186v583rmzp', '4gdyJJFph3i2oMdpRnCONw', '5xNWwWNTIHp21TauVPWaPk']
-edm_train_ids = ['6DHt1ugZdDCkPe3PNf69PQ', '09T8BRorjn8It7gCCKuT3U', '5mhb5QRMXgufiqEuHL74gi']
+
+classical_train_ids = ['37i9dQZF1DWYkztttC1w38', '0DOYw5K9vybLVN1lOUO9b5',
+                       '4o6d2y91Us7AfsIzCj5uwr', '37i9dQZF1DX4P0ijJK5lUv', '37i9dQZF1DWZnzwzLBft6A',
+                       '1h0CEZCm6IbFTbxThn6Xcs']
+rap_train_ids = ['37i9dQZF1DX186v583rmzp', '4gdyJJFph3i2oMdpRnCONw',
+                 '5xNWwWNTIHp21TauVPWaPk', '37i9dQZF1DWYGxBNe4qojI', '37i9dQZF1DWT6MhXz0jw61',
+                 '37i9dQZF1DX7Mq3mO5SSDc', '5zVTjqiHYpNyF8EzJ96Aqb']
+edm_train_ids = ['6DHt1ugZdDCkPe3PNf69PQ', '09T8BRorjn8It7gCCKuT3U',
+                 '5mhb5QRMXgufiqEuHL74gi', '37i9dQZF1DX0hvSv9Rf41p', '37i9dQZF1DX5Q27plkaOQ3',
+                 '37i9dQZF1DX6J5NfMJS675']
 
 classical_test_ids = ['6wObnEPQ63a4kei1sEcMdH', '1ZJpJahEFst7u8njXeGFyv']
 rap_test_ids = ['2nJsRFJkr7BegSfKpG2d7O', '7pf7okzvbnPdobKmjHJSRl']
@@ -81,12 +94,26 @@ all_train_ids = [classical_train_ids, rap_train_ids, edm_train_ids]
 all_test_ids = [classical_test_ids, rap_test_ids, edm_test_ids]
 
 x_train, y_train = format_data(all_train_ids)
-x_test, y_test = format_data(all_train_ids)
+x_test, y_test = format_data(all_test_ids)
 
+print("Train size")
+print(len(x_train))
+print("Test size")
+print(len(x_test))
+
+# KNN ################
 knn = KNeighborsClassifier()
 knn.fit(x_train, y_train)
-
 y_pred = knn.predict(x_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+print("accuracy: " + str(accuracy))
+
+
+# Random Forest ############
+rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+rf.fit(x_train, y_train)
+y_pred = rf.predict(x_test)
 
 # precision = precision_score(y_train, y_pred)
 # recall = recall_score(y_train, y_pred)
@@ -98,4 +125,3 @@ accuracy = accuracy_score(y_test, y_pred)
 # print("recall: " + str(recall))
 print("accuracy: " + str(accuracy))
 # print("roc auc: " + str(roc_auc))
-
