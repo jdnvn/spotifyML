@@ -4,6 +4,8 @@ import numpy as np
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score, precision_score, recall_score, roc_auc_score, accuracy_score
 
 # Spotify track genre classifier
@@ -58,15 +60,13 @@ def format_data(all_class_ids):
         features = get_playlist_features(playlist_id, classes[i])
 
     y.extend([classes[i]]*len(features))
-    print(classes[i])
-    print(len(features))
-    print()
+
     if len(x) > 0:
       x = np.concatenate((x, features))
     else:
       x = features
 
-  return x, y
+  return x, np.array(y)
 
 # Marcin EDM 2020 spotify:playlist:6DHt1ugZdDCkPe3PNf69PQ
 
@@ -102,16 +102,25 @@ print("Test size")
 print(len(x_test))
 
 # KNN ################
-knn = KNeighborsClassifier()
-knn.fit(x_train, y_train)
-y_pred = knn.predict(x_test)
+# knn = KNeighborsClassifier(n_neighbors=300)
+# knn.fit(x_train, y_train)
+# y_pred = knn.predict(x_test)
+
+# accuracy = accuracy_score(y_test, y_pred)
+# print("accuracy: " + str(accuracy))
+
+# Logistic Regression
+lr = LogisticRegression(multi_class='multinomial')
+lr.fit(x_train, y_train)
+y_pred = lr.predict(x_test)
 
 accuracy = accuracy_score(y_test, y_pred)
+print("Logistic Regression")
 print("accuracy: " + str(accuracy))
 
 
 # Random Forest ############
-rf = RandomForestClassifier(max_depth=10, max_features='sqrt')
+rf = RandomForestClassifier(max_depth=11, max_features='sqrt')
 rf.fit(x_train, y_train)
 y_pred = rf.predict(x_test)
 
@@ -120,8 +129,25 @@ y_pred = rf.predict(x_test)
 accuracy = accuracy_score(y_test, y_pred)
 # roc_auc = roc_auc_score(y_train, nb.scores)
 
-# print("f1: " + str(f1))
-# print("precision: " + str(precision))
-# print("recall: " + str(recall))
+print("Random Forest Classifier")
 print("accuracy: " + str(accuracy))
-# print("roc auc: " + str(roc_auc))
+
+kf = KFold(n_splits=5)
+kf.get_n_splits(x_train)
+
+score = 0
+
+for i, (train_index, test_index) in enumerate(kf.split(x_train)):
+    X_train, X_test = x_train[train_index], x_train[test_index]
+    Y_train, Y_test = y_train[train_index], y_train[test_index]
+
+    rf = RandomForestClassifier(max_depth=11, max_features='sqrt')
+    rf.fit(x_train, y_train)
+    Y_pred = rf.predict(X_test)
+    accuracy = accuracy_score(Y_test, Y_pred)
+    f1 = f1_score(Y_test, Y_pred, labels=['classical', 'rap', 'edm'], average='micro')
+    print("fold " + str(i) + ": " + str(accuracy))
+    score += f1
+
+print("K-Fold with Random Forest")
+print("avg f1 score: " + str(score/5))
